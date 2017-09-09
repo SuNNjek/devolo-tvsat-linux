@@ -1,0 +1,68 @@
+.PHONY: all clean distclean install make_subdirs uninstall
+
+INIT_INSTALL_CMD_S:=insserv tvsatd && ln -s /etc/init.d/tvsatd /sbin/rctvsatd
+INIT_INSTALL_CMD_U:=update-rc.d tvsatd stop 51 0 . stop 51 1 . start 51 2 . start 51 3 . start 51 4 . start 51 5 . stop 51 6 .
+INIT_INSTALL_CMD:=$(shell if test -x "`which update-rc.d 2> /dev/null`";\
+		then echo "$(INIT_INSTALL_CMD_U)";\
+		else if test -x "`which insserv 2> /dev/null`";\
+			then echo "$(INIT_INSTALL_CMD_S)";\
+			else echo "";\
+		fi;\
+	fi)
+
+INIT_UNINSTALL_CMD_S:=insserv -r tvsatd && rm /sbin/rctvsatd
+INIT_UNINSTALL_CMD_U:=update-rc.d -f tvsatd remove
+INIT_UNINSTALL_CMD:=$(shell if test -x "`which update-rc.d 2> /dev/null`";\
+		then echo "$(INIT_UNINSTALL_CMD_U)";\
+		else if test -x "`which insserv 2> /dev/null`";\
+			then echo "$(INIT_UNINSTALL_CMD_S)";\
+			else echo "";\
+		fi;\
+	fi)
+
+all: make_subdirs
+	cd app; $(MAKE)
+	cd module; $(MAKE)
+
+clean: make_subdirs
+	cd app; $(MAKE) clean
+	cd module; $(MAKE) clean
+
+distclean: make_subdirs
+	cd app; $(MAKE) distclean
+	cd module; $(MAKE) distclean
+
+install: make_subdirs
+	cd app; $(MAKE) install
+	cd module; $(MAKE) install
+	
+	echo "* Installing init script"
+	install -m 0755 tvsatd.init /etc/init.d/tvsatd
+	$(INIT_INSTALL_CMD)
+	
+	if test ! -e /etc/tvsatd/tvsatd.conf; then\
+		echo "* Installing default config";\
+		install -d -o0 -g0 /etc/tvsatd;\
+		install -m 0644 -o0 -g0 tvsatd.conf /etc/tvsatd/tvsatd.conf;\
+	fi
+	
+	echo
+	echo " ----------------------------------------------------"
+	echo "| Installation complete                              |"
+	echo "| Please restart your computer or call the following |"
+	echo "| commands with root privileges:                     |"
+	echo "|   modprobe tvsat                                   |"
+	echo "|   /etc/init.d/tvsatd start                         |"
+	echo " ----------------------------------------------------"
+
+uninstall:
+	cd app; $(MAKE) uninstall
+	cd module; $(MAKE) uninstall
+	
+	echo "* Removing init script"
+	-$(INIT_UNINSTALL_CMD)
+	-$(RM) /etc/init.d/tvsatd
+	-$(RM) /var/run/tvsatd.pid
+
+make_subdirs:
+	true

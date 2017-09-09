@@ -1,0 +1,70 @@
+*** INSTALLATION INSTRUCTIONS ***
+
+The included Makefiles and init scripts were developed with Ubuntu 8.04 and
+8.10 in mind. The Makefiles are designed to provide an easy-to-use means of
+building and installing the driver from source code. They should be able to
+locate kernel sources and init tools by themselves, at least on the
+aforementioned Linux systems.
+
+
+You need to have a working build environment for building kernel modules in
+order to compile and install this driver package. If you do not have such
+an environment, try the following methods of setting one up:
+
+** Ubuntu 8.04 **
+- install the package 'build-essential'
+- install the kernel headers package for your currently running kernel
+  (usually 'linux-headers-generic')
+
+** Ubuntu 8.10 **
+- install the package 'build-essential'
+- install the kernel headers package for your currently running kernel
+  (usually 'linux-headers-generic')
+- install the kernel source package for your currently running kernel
+  ('linux-source')
+- open a command shell and get root access
+- go to the '/usr/src' directory and unpack the linux-source package
+    e.g. 'cd /usr/src; tar xjf linux-source-2.6.27.tar.bz2'
+- create a symbolic link from the 'drivers' directory in your linux sources
+  to your linux headers
+    e.g. 'ln -sfn /usr/src/linux-source-2.6.27/drivers /usr/src/linux-headers-`uname -r`/drivers'
+- let the '/usr/src/linux' link point to your linux headers
+    e.g. 'ln -sfn /usr/src/linux-headers-`uname -r` /usr/src/linux'
+
+
+Once you have a working build environment, just do the following:
+
+- open a command shell and get root access
+- go to the directory where you found this instructions file
+- run 'make' and then 'make install'
+- either reboot linux or execute the following commands:
+	modprobe tvsat
+	/etc/init.d/tvsatd start
+- install a DVB viewer (Kaffeine, VDR, MythTV, etc.)
+- make sure your user has the necessary rights to watch tv (e.g. on Ubuntu
+  you have to be in the 'video' group)
+
+
+If you have not already configured your TV Sat's IP settings, you can do so
+by using the 'tvsatcfg' configuration tool. Type 'man tvsatcfg' for more
+information on how to use it. Be sure to close all DVB viewers before using the
+configuration tool.
+
+
+The tvsat daemon has a configuration file that will be installed to
+/etc/tvsat/tvsatd.conf. There are two options that can be changed:
+
+broadcast_interval:     The interval in seconds between the broadcasts that
+                        are sent out by the daemon to find TV Sat devices.
+                        Valid values are in the range [5..999].
+interface:      The network interface that the daemon should bind to. Only
+                one interface may be specified here. If you remove this
+                option, the daemon broadcasts on all interfaces. This is
+                the default behavior.
+
+The file also includes a device map, that lets you map an IP or MAC address
+to a DVB adapter. Refer to the examples in the file for the exact notation.
+This map is especially useful in scenarios where two or more TV Sat devices
+are used to receive signals from different satellites. This way you can
+make satellite equipment settings per DVB adapter without having to worry
+about them switching adapter numbers when you reboot your computer.
