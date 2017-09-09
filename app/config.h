@@ -33,6 +33,7 @@
 #include <map>
 #include <regex.h>
 #include <string>
+#include <stdint.h>
 
 //////////////////////////////////////////////////////////////////////////
 /// Configuration options

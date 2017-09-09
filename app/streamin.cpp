@@ -31,6 +31,8 @@
 #include <iostream>
 #include <netinet/ip.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #include "log.h"
 #include "streamin.h"

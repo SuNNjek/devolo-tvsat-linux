@@ -29,6 +29,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <cstdio>
 #include <iostream>
 #include <net/if.h>
 #include <netinet/ether.h>
@@ -37,6 +38,7 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <utility>
+#include <unistd.h>
 
 #include "discover.h"
 
@@ -229,7 +231,7 @@ int parseIP( uint8_t *out, const char *in )
 {
 	in_addr addr, haddr;
 	int c = 0;
-	char *ptr = strchr( in, '.' );
+	char *ptr = strchr( const_cast<char*>(in), '.' );
 
 	while( ptr ) {
 		++c;

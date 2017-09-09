@@ -25,8 +25,10 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/version.h>
-#include <linux/dvb/dmx.h>
-#include <linux/dvb/frontend.h>
+//#include <linux/dvb/dmx.h>
+//#include <linux/dvb/frontend.h>
+// #include "/home/robin/Downloads/linuxtv-dvb-1.0.1/include/linux/dvb/dmx.h"
+#include "/home/robin/Downloads/linuxtv-dvb-1.0.1/include/linux/dvb/frontend.h"
 #include <linux/cdev.h>
 #include <linux/ioctl.h>
 #include <linux/fs.h>
@@ -34,12 +36,18 @@
 #include <linux/time.h>
 #include <asm/io.h>
 
-#include <dvbdev.h>
-#include <dmxdev.h>
-#include <dvb_demux.h>
+#include "/usr/src/linux/drivers/media/dvb-core/dvbdev.h"
+#include "/usr/src/linux/drivers/media/dvb-core/dmxdev.h"
+#include "/usr/src/linux/drivers/media/dvb-core/dvb_demux.h"
+
+// #include <dvbdev.h>
+// #include <dmxdev.h>
+// #include <dvb_demux.h>
 
 #include "../include/tvsat.h"
 #include "natbus.h"
+
+#define FE_DISHNETWORK_SEND_LEGACY_CMD _IO('o', 80)
 
 // driver parameters
 #define PRODUCT_NAME          "devolo dLAN TV Sat"
@@ -238,7 +246,7 @@ static void tvsat_add_tune_event( struct tvsat_event_list *el, struct tvsat_tuni
 }
 
 // handles ioctls on our dvb frontends
-static int tvsat_frontend_ioctl( struct inode *inode, struct file *file, unsigned cmd, unsigned long arg )
+static long tvsat_frontend_ioctl( /* struct inode *inode, */ struct file *file, unsigned cmd, unsigned long arg )
 {
   fe_status_t status = 0;
   struct dvb_frontend_event __user *event = 0;
@@ -396,7 +404,7 @@ static int tvsat_frontend_ioctl( struct inode *inode, struct file *file, unsigne
 
       dev->tuned = 0;
 
-      return tvsat_frontend_ioctl( inode, file, FE_READ_STATUS, ( unsigned long )&event->status );
+      return tvsat_frontend_ioctl( /* inode, */ file, FE_READ_STATUS, ( unsigned long )&event->status );
 
     case FE_DISHNETWORK_SEND_LEGACY_CMD:
       // not implemented
@@ -446,7 +454,7 @@ static int tvsat_frontend_release( struct inode *inode, struct file *file )
 // the frontends' file ops struct
 static struct file_operations tvsat_frontend_file_operations = {
   .owner          = THIS_MODULE,
-  .ioctl          = tvsat_frontend_ioctl,
+  .compat_ioctl   = tvsat_frontend_ioctl,
   .poll           = tvsat_frontend_poll,
   .open           = tvsat_frontend_open,
   .release        = tvsat_frontend_release,
@@ -497,19 +505,19 @@ static ssize_t tvsat_input_write( struct file *file, const char *buf, size_t cou
 {
   struct tvsat_device *dev;
 
-  dev = &tvsat->devices[ iminor( file->f_dentry->d_inode ) - 1 ];
+  dev = &tvsat->devices[ iminor( /* file->f_dentry->d_inode */ file->f_path.dentry->d_inode ) - 1 ];
   dvb_dmx_swfilter( dev->demux, buf, count );
 
   return count;
 }
 
 // handles ioctls on our input devices
-static int tvsat_input_ioctl( struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg )
+static long tvsat_input_ioctl( /* struct inode *inode, */ struct file *file, unsigned int cmd, unsigned long arg )
 {
   struct tvsat_event *ev;
   struct tvsat_device *dev;
 
-  dev = &tvsat->devices[ iminor( inode ) - 1 ];
+  dev = &tvsat->devices[ iminor( /* inode */ file->f_path.dentry->d_inode ) - 1 ];
 
   switch( cmd )
   {
@@ -544,7 +552,7 @@ static int tvsat_input_ioctl( struct inode *inode, struct file *file, unsigned i
 static struct file_operations tvsat_input_file_operations = {
   .owner          = THIS_MODULE,
   .write          = tvsat_input_write,
-  .ioctl          = tvsat_input_ioctl,
+  .compat_ioctl          = tvsat_input_ioctl,
 };
 
 // registers a new device with the nat bus and the dvb subsystem
@@ -765,7 +773,7 @@ static int tvsat_dev_id_cmp( struct tvsat_dev_id *id1, struct tvsat_dev_id *id2 
 }
 
 // handles ioctls on the control device
-static int tvsat_control_ioctl( struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg )
+static long tvsat_control_ioctl( /* struct inode *inode, */ struct file *file, unsigned int cmd, unsigned long arg )
 {
   int found, i, minor;
   struct tvsat_dev_id dev_id;
@@ -833,7 +841,7 @@ static int tvsat_control_ioctl( struct inode *inode, struct file *file, unsigned
 // the control device's file ops structure
 static struct file_operations tvsat_control_file_operations = {
   .owner          = THIS_MODULE,
-  .ioctl          = tvsat_control_ioctl,
+  .compat_ioctl          = tvsat_control_ioctl,
 };
 
 // checks if a device with the same id is already registered
@@ -842,7 +850,7 @@ static int tvsat_device_probe( struct device *dev )
   int i;
 
   for( i = 0; i < MAX_DEVS; ++i )
-    if( tvsat->devices[ i ].in_use && (strncmp( dev->bus_id, tvsat->devices[ i ].device->device.bus_id, NATBUS_ID_SIZE ) == 0) )
+    if( tvsat->devices[ i ].in_use && (strncmp( dev_name(dev), dev_name(&tvsat->devices[ i ].device->device), NATBUS_ID_SIZE ) == 0) )
       return -EINVAL;
 
   return 0;

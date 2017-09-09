@@ -38,6 +38,9 @@
 #include <signal.h>
 #include <string>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
 
 #include "config.h"
 #include "discover.h"

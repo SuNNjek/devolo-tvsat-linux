@@ -51,14 +51,14 @@ struct bus_type natbus_type = {
 
 static void natbus_dev_release( struct device *dev )
 {
-  if( dev && dev->bus_id )
-    printk( KERN_DEBUG "NAT: releasing device (%s)\n", dev->bus_id );
+  if( dev && dev_name(dev) )
+    printk( KERN_DEBUG "NAT: releasing device (%s)\n", dev_name(dev) );
   else
     printk( KERN_ERR "%s(): Invalid release call\n", __FUNCTION__ );
 }
 
 struct device natbus_dev = {
-  .bus_id   = "0.0.0.0",
+  //.bus_id   = "0.0.0.0",
   .release  = natbus_dev_release
 };
 
@@ -70,9 +70,10 @@ int register_nat_device( struct nat_device *natdev )
   natdev->device.bus = &natbus_type;
   natdev->device.parent = &natbus_dev;
   natdev->device.release = natbus_dev_release;
-  strncpy( natdev->device.bus_id, natdev->name, NATBUS_ID_SIZE );
+  dev_set_name(&natdev->device, natdev->name);
+  //strncpy( natdev->device.bus_id, natdev->name, NATBUS_ID_SIZE );
 
-  printk( KERN_DEBUG "NAT: registering device (%s)\n", natdev->device.bus_id );
+  printk( KERN_DEBUG "NAT: registering device (%s)\n", dev_name(&natdev->device) );
 
   return device_register( &natdev->device );
 }

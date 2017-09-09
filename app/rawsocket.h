@@ -34,6 +34,7 @@
 #include <net/ethernet.h>
 #include <string>
 #include <sys/socket.h>
+#include <unistd.h>
 
 //////////////////////////////////////////////////////////////////////////
 /// Raw socket abstraction class
