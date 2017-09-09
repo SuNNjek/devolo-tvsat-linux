@@ -25,10 +25,6 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/version.h>
-//#include <linux/dvb/dmx.h>
-//#include <linux/dvb/frontend.h>
-// #include "/home/robin/Downloads/linuxtv-dvb-1.0.1/include/linux/dvb/dmx.h"
-#include "/home/robin/Downloads/linuxtv-dvb-1.0.1/include/linux/dvb/frontend.h"
 #include <linux/cdev.h>
 #include <linux/ioctl.h>
 #include <linux/fs.h>
@@ -45,6 +41,7 @@
 // #include <dvb_demux.h>
 
 #include "../include/tvsat.h"
+#include "../include/linux/dvb/frontend.h"
 #include "natbus.h"
 
 #define FE_DISHNETWORK_SEND_LEGACY_CMD _IO('o', 80)
