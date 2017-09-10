@@ -44,8 +44,6 @@
 #include "../include/linux/dvb/frontend.h"
 #include "natbus.h"
 
-#define FE_DISHNETWORK_SEND_LEGACY_CMD _IO('o', 80)
-
 // driver parameters
 #define PRODUCT_NAME          "devolo dLAN TV Sat"
 #define DRIVER_NAME           "dlan-tvsat"

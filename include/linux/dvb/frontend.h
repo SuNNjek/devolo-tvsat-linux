@@ -238,27 +238,28 @@ struct dvb_frontend_event {
 
 
 
-#define FE_GET_INFO                _IOR('o', 61, struct dvb_frontend_info)
+#define FE_GET_INFO                     _IOR('o', 61, struct dvb_frontend_info)
 
-#define FE_DISEQC_RESET_OVERLOAD   _IO('o', 62)
-#define FE_DISEQC_SEND_MASTER_CMD  _IOW('o', 63, struct dvb_diseqc_master_cmd)
-#define FE_DISEQC_RECV_SLAVE_REPLY _IOR('o', 64, struct dvb_diseqc_slave_reply)
-#define FE_DISEQC_SEND_BURST       _IO('o', 65)  /* fe_sec_mini_cmd_t */
+#define FE_DISEQC_RESET_OVERLOAD        _IO('o', 62)
+#define FE_DISEQC_SEND_MASTER_CMD       _IOW('o', 63, struct dvb_diseqc_master_cmd)
+#define FE_DISEQC_RECV_SLAVE_REPLY      _IOR('o', 64, struct dvb_diseqc_slave_reply)
+#define FE_DISEQC_SEND_BURST            _IO('o', 65)  /* fe_sec_mini_cmd_t */
 
-#define FE_SET_TONE                _IO('o', 66)  /* fe_sec_tone_mode_t */
-#define FE_SET_VOLTAGE             _IO('o', 67)  /* fe_sec_voltage_t */
-#define FE_ENABLE_HIGH_LNB_VOLTAGE _IO('o', 68)  /* int */
+#define FE_SET_TONE                     _IO('o', 66)  /* fe_sec_tone_mode_t */
+#define FE_SET_VOLTAGE                  _IO('o', 67)  /* fe_sec_voltage_t */
+#define FE_ENABLE_HIGH_LNB_VOLTAGE      _IO('o', 68)  /* int */
 
-#define FE_READ_STATUS             _IOR('o', 69, fe_status_t)
-#define FE_READ_BER                _IOR('o', 70, uint32_t)
-#define FE_READ_SIGNAL_STRENGTH    _IOR('o', 71, uint16_t)
-#define FE_READ_SNR                _IOR('o', 72, uint16_t)
-#define FE_READ_UNCORRECTED_BLOCKS _IOR('o', 73, uint32_t)
+#define FE_READ_STATUS                  _IOR('o', 69, fe_status_t)
+#define FE_READ_BER                     _IOR('o', 70, uint32_t)
+#define FE_READ_SIGNAL_STRENGTH         _IOR('o', 71, uint16_t)
+#define FE_READ_SNR                     _IOR('o', 72, uint16_t)
+#define FE_READ_UNCORRECTED_BLOCKS      _IOR('o', 73, uint32_t)
 
-#define FE_SET_FRONTEND            _IOW('o', 76, struct dvb_frontend_parameters)
-#define FE_GET_FRONTEND            _IOR('o', 77, struct dvb_frontend_parameters)
-#define FE_GET_EVENT               _IOR('o', 78, struct dvb_frontend_event)
+#define FE_SET_FRONTEND                 _IOW('o', 76, struct dvb_frontend_parameters)
+#define FE_GET_FRONTEND                 _IOR('o', 77, struct dvb_frontend_parameters)
+#define FE_GET_EVENT                    _IOR('o', 78, struct dvb_frontend_event)
 
+#define FE_DISHNETWORK_SEND_LEGACY_CMD  _IO('o', 80)
 
 #endif /*_DVBFRONTEND_H_*/
 
