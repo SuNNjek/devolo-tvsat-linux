@@ -649,7 +649,7 @@ static int tvsat_register_device( struct tvsat_dev_id *dev_id )
     goto cleanup;
   }
 
-  dvb_register_device( dev->adapter, &dev->frontend, &tvsat_frontend_template, dev, DVB_DEVICE_FRONTEND );
+  dvb_register_device( dev->adapter, &dev->frontend, &tvsat_frontend_template, dev, DVB_DEVICE_FRONTEND, 1 );
 
   // create an input character device
   cdev_init( &dev->input_cdev, &tvsat_input_file_operations );
