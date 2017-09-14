@@ -25,6 +25,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/version.h>
+#include <linux/device.h>
 
 MODULE_LICENSE("GPL v2");
 
@@ -72,6 +73,7 @@ int register_nat_device( struct nat_device *natdev )
   natdev->device.release = natbus_dev_release;
   dev_set_name(&natdev->device, natdev->name);
   //strncpy( natdev->device.bus_id, natdev->name, NATBUS_ID_SIZE );
+  //strncpy( dev_name( &natdev->device ), natdev->name, NATBUS_ID_SIZE );
 
   printk( KERN_DEBUG "NAT: registering device (%s)\n", dev_name(&natdev->device) );
 
@@ -101,9 +103,10 @@ static int __init natbus_module_init( void )
     return ret;
   }
 
+  dev_set_name( &natbus_dev, "0.0.0.0" );
   if( (ret = device_register( &natbus_dev )) )
   {
-    printk( KERN_ERR "%s(): Failed to register the nat bus root device\n", __FUNCTION__ );
+    printk( KERN_ERR "%s(): Failed to register the nat bus root device (%d)\n", __FUNCTION__, ret );
     bus_unregister( &natbus_type );
     return ret;
   }
