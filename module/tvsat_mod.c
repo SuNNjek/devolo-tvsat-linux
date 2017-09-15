@@ -449,7 +449,7 @@ static int tvsat_frontend_release( struct inode *inode, struct file *file )
 // the frontends' file ops struct
 static struct file_operations tvsat_frontend_file_operations = {
   .owner          = THIS_MODULE,
-  .compat_ioctl   = tvsat_frontend_ioctl,
+  .unlocked_ioctl = tvsat_frontend_ioctl,
   .poll           = tvsat_frontend_poll,
   .open           = tvsat_frontend_open,
   .release        = tvsat_frontend_release,
@@ -547,7 +547,7 @@ static long tvsat_input_ioctl( /* struct inode *inode, */ struct file *file, uns
 static struct file_operations tvsat_input_file_operations = {
   .owner          = THIS_MODULE,
   .write          = tvsat_input_write,
-  .compat_ioctl          = tvsat_input_ioctl,
+  .unlocked_ioctl = tvsat_input_ioctl,
 };
 
 // registers a new device with the nat bus and the dvb subsystem
@@ -836,7 +836,7 @@ static long tvsat_control_ioctl( /* struct inode *inode, */ struct file *file, u
 // the control device's file ops structure
 static struct file_operations tvsat_control_file_operations = {
   .owner          = THIS_MODULE,
-  .compat_ioctl          = tvsat_control_ioctl,
+  .unlocked_ioctl = tvsat_control_ioctl,
 };
 
 // checks if a device with the same id is already registered
