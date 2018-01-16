@@ -25,23 +25,22 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/version.h>
+#include <linux/dvb/dmx.h>
+#include <linux/dvb/frontend.h>
 #include <linux/cdev.h>
 #include <linux/ioctl.h>
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
 #include <linux/time.h>
+#include <linux/uaccess.h>
+#include <linux/slab.h>
 #include <asm/io.h>
 
-#include "/usr/src/linux/drivers/media/dvb-core/dvbdev.h"
-#include "/usr/src/linux/drivers/media/dvb-core/dmxdev.h"
-#include "/usr/src/linux/drivers/media/dvb-core/dvb_demux.h"
-
-// #include <dvbdev.h>
-// #include <dmxdev.h>
-// #include <dvb_demux.h>
+#include <dvbdev.h>
+#include <dmxdev.h>
+#include <dvb_demux.h>
 
 #include "../include/tvsat.h"
-#include "../include/linux/dvb/frontend.h"
 #include "natbus.h"
 
 // driver parameters

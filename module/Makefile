@@ -28,8 +28,9 @@ else
 		fi)
 endif
 
-EXTRA_CFLAGS+=-Idrivers/media/dvb/dvb-core
+EXTRA_CFLAGS+=-I./drivers/media/dvb-core
 EXTRA_CFLAGS+=-Wall
+# EXTRA_CFLAGS+=-H
 
 all: tvsat
 
