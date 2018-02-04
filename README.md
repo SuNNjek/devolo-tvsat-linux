@@ -1,4 +1,5 @@
-*** KNOWN ISSUES ***
+KNOWN ISSUES
+============
 
 - Because this driver is still based on the old DVB API, it does not support DVB-S2.
 - The driver always reports a fixed SNR value, because the DVB API does not define a specific unit of measurement.
