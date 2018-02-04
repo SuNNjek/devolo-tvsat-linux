@@ -27,6 +27,7 @@
 #include <linux/version.h>
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
+#include <linux/dvb/version.h>
 #include <linux/cdev.h>
 #include <linux/ioctl.h>
 #include <linux/fs.h>
@@ -242,11 +243,10 @@ static void tvsat_add_tune_event( struct tvsat_event_list *el, struct tvsat_tuni
 // handles ioctls on our dvb frontends
 static long tvsat_frontend_ioctl( /* struct inode *inode, */ struct file *file, unsigned cmd, unsigned long arg )
 {
-  fe_status_t status = 0;
-  struct dvb_frontend_event __user *event = 0;
-  struct dvb_frontend_parameters fe_param;
+  enum fe_status status = 0;
   struct dvb_diseqc_master_cmd dm_cmd;
-  __u32 ber, snr, sst;
+  struct dtv_property curr_prop, props[13];
+  struct dtv_properties prop_container;
   int i;
   struct tvsat_device *dev;
 
@@ -328,87 +328,262 @@ static long tvsat_frontend_ioctl( /* struct inode *inode, */ struct file *file, 
       // rely on fe_get_event to get locking information
       status = FE_HAS_SIGNAL | FE_HAS_LOCK | FE_HAS_SYNC | FE_HAS_CARRIER | FE_HAS_VITERBI;
 
-      return copy_to_user( (void  __user *)arg, &status, sizeof( fe_status_t ) );
+      return copy_to_user( (void  __user *)arg, &status, sizeof( enum fe_status ) );
 
-    case FE_READ_BER:
-      //TODO: we always return the optimal values here until the dvb api maintainers
-      //      have decided on some standardized format
-      ber = 0;
+    case FE_GET_PROPERTY:
+      props[0] = (struct dtv_property) { .cmd = DTV_FREQUENCY, .u.data = dev->tuning_parameters.frequency };
+      props[1] = (struct dtv_property) { .cmd = DTV_MODULATION, .u.data = dev->tuning_parameters.modulation };
+      props[2] = (struct dtv_property) { .cmd = DTV_INVERSION, .u.data = dev->tuning_parameters.inversion };
+      props[3] = (struct dtv_property) { .cmd = DTV_SYMBOL_RATE, .u.data = dev->tuning_parameters.symbol_rate };
+      props[4] = (struct dtv_property) { .cmd = DTV_INNER_FEC, .u.data = dev->tuning_parameters.fec };
+      props[5] = (struct dtv_property) { .cmd = DTV_VOLTAGE, .u.data = dev->tuning_parameters.polarization };
+      props[6] = (struct dtv_property) { .cmd = DTV_TONE, .u.data = dev->tuning_parameters.band };
+      props[7] = (struct dtv_property) { .cmd = DTV_PILOT, .u.data = dev->tuning_parameters.pilot },
+      props[8] = (struct dtv_property) { .cmd = DTV_ROLLOFF, .u.data = dev->tuning_parameters.roll_off };
+      props[9] = (struct dtv_property) { .cmd = DTV_STAT_CNR, .u.data = 0xffff };
+      props[10] = (struct dtv_property) { .cmd = DTV_STAT_SIGNAL_STRENGTH, .u.data = 0xffff };
+      props[11] = (struct dtv_property) { .cmd = DTV_DELIVERY_SYSTEM, .u.data = (SYS_DVBS | SYS_DVBS2) };
+      props[12] = (struct dtv_property) { .cmd = DTV_API_VERSION, .u.data = (DVB_API_VERSION << 8) | DVB_API_VERSION_MINOR };
 
-      return copy_to_user( (void __user *)arg, &ber, sizeof( __u32 ) );
+      prop_container = (struct dtv_properties) {
+        .num = 13, .props = props
+      };
 
-    case FE_READ_SIGNAL_STRENGTH:
-      //TODO: see above
-      sst = 0xffff;
+      return copy_to_user( (void __user *)arg, &prop_container, sizeof( struct dtv_properties ) );
 
-      return copy_to_user( ( void __user *)arg, &sst, sizeof( __u32 ) );
-
-    case FE_READ_SNR:
-      //TODO: see above
-      snr = 0xffff;
-
-      return copy_to_user( ( void __user *)arg, &snr, sizeof( __u32 ) );
-
-    case FE_READ_UNCORRECTED_BLOCKS:
-      //TODO: see above
-      return 0;
-
-    case FE_SET_FRONTEND:
-      // sets the remaining tuning parameters
-      // we assume that this gets called after set_tone and set_voltage
+    case FE_SET_PROPERTY:
       if( !arg )
         return -EINVAL;
 
-      if( copy_from_user( &fe_param, (struct dvb_frontend_parameters __user *)arg, sizeof( struct dvb_frontend_parameters ) ) )
+      if( copy_from_user( &prop_container, (struct dtv_properties __user *)arg, sizeof( struct dtv_properties ) ) )
         return -EFAULT;
 
-      dev->tuning_parameters.fec          = fe_param.u.qpsk.fec_inner;
-      dev->tuning_parameters.frequency    = fe_param.frequency;
-      dev->tuning_parameters.inversion    = fe_param.inversion;
-
-      // the next three are S2 specific and are not supported by the dvb api v3
-      // waiting patiently for v5 to make it into the mainline kernel...
-      dev->tuning_parameters.modulation   = 0;
-      dev->tuning_parameters.pilot        = 0;
-      dev->tuning_parameters.roll_off     = 2;
-
-      dev->tuning_parameters.symbol_rate  = fe_param.u.qpsk.symbol_rate;
-
-      tvsat_add_tune_event( &dev->events, &dev->tuning_parameters );
-
-      for( i = 0; i < TVSAT_MAX_DISEQC_CMDS; ++i )
-        dev->tuning_parameters.diseqc[ i ].type = 0;
-
-      return 0;
-
-    case FE_GET_FRONTEND:
-      // not implemented
-      return 0;
-
-    case FE_GET_EVENT:
-      // this is the absolute minimum implementation
-      // we only have one event saying that the device is now tuned
-      event = ( void __user *)arg;
-
-      if( dev->tuned == 0 )
+      for( i = 0; i < prop_container.num; i++ )
       {
-        if( file->f_flags & O_NONBLOCK )
-          return -EAGAIN;
+        struct dtv_property curr_prop = prop_container.props[i];
+
+        switch(curr_prop.cmd)
+        {
+          case DTV_FREQUENCY:
+            dev->tuning_parameters.frequency = curr_prop.u.data;
+            break;
+
+          case DTV_INVERSION:
+            dev->tuning_parameters.inversion = curr_prop.u.data;
+            break;
+
+          case DTV_SYMBOL_RATE:
+            dev->tuning_parameters.symbol_rate = curr_prop.u.data;
+            break;
+
+          case DTV_INNER_FEC:
+            dev->tuning_parameters.fec = curr_prop.u.data;
+            break;
+
+          case DTV_VOLTAGE:
+            dev->tuning_parameters.polarization = curr_prop.u.data;
+            break;
+
+          case DTV_TONE:
+            dev->tuning_parameters.band = curr_prop.u.data;
+            break;
+
+          case DTV_MODULATION:
+            dev->tuning_parameters.modulation = curr_prop.u.data;
+            break;
+
+          case DTV_PILOT:
+            dev->tuning_parameters.pilot = curr_prop.u.data;
+            break;
+
+          case DTV_ROLLOFF:
+            dev->tuning_parameters.roll_off = curr_prop.u.data;
+            break;
+
+          case DTV_TUNE:
+            tvsat_add_tune_event( &dev->events, &dev->tuning_parameters );
+            break;
+
+          default:
+            break;
+
+          // Missing here because I don't know how to implement them:
+          // * DTV_CLEAR
+          // * DTV_STREAM_ID
+          // * DTV_SCRAMBLING_SEQUENCE_INDEX
+        }
       }
 
-      dev->tuned = 0;
-
-      return tvsat_frontend_ioctl( /* inode, */ file, FE_READ_STATUS, ( unsigned long )&event->status );
-
-    case FE_DISHNETWORK_SEND_LEGACY_CMD:
-      // not implemented
       return 0;
-
-    default:
-      break;
   }
 
-  return 0;
+  // enum fe_status status = 0;
+  // struct dvb_frontend_event __user *event = 0;
+  // struct dvb_frontend_parameters fe_param;
+  // struct dvb_diseqc_master_cmd dm_cmd;
+  // __u32 ber, snr, sst;
+  // int i;
+  // struct tvsat_device *dev;
+
+  // dev = ((struct dvb_device *)file->private_data)->priv;
+
+  // switch( cmd )
+  // {
+  //   case FE_GET_INFO:
+  //     // returns the frontend info
+  //     return copy_to_user( (void __user *)arg, &tvsat_frontend_info, sizeof( struct dvb_frontend_info ) );
+
+  //   case FE_DISEQC_RESET_OVERLOAD:
+  //     // not implemented
+  //     return 0;
+
+  //   case FE_DISEQC_SEND_MASTER_CMD:
+  //     // adds a master command to the tuning parameters
+  //     if( !arg )
+  //       return -EINVAL;
+
+  //     if( copy_from_user( &dm_cmd, (struct dvb_diseqc_master_cmd __user *)arg, sizeof( struct dvb_diseqc_master_cmd ) ) )
+  //       return -EFAULT;
+
+  //     for( i = 0; i < TVSAT_MAX_DISEQC_CMDS; ++i )
+  //     {
+  //       if( dev->tuning_parameters.diseqc[ i ].type == 0 )
+  //         break;
+  //     }
+
+  //     if( i == TVSAT_MAX_DISEQC_CMDS )
+  //       return -EFAULT;
+
+  //     dev->tuning_parameters.diseqc[ i ].type         = 1;
+  //     dev->tuning_parameters.diseqc[ i ].message_len  = dm_cmd.msg_len;
+  //     memcpy( dev->tuning_parameters.diseqc[ i ].message, dm_cmd.msg, 6 );
+
+  //     return 0;
+
+  //   case FE_DISEQC_RECV_SLAVE_REPLY:
+  //     // not implemented
+  //     return 0;
+
+  //   case FE_DISEQC_SEND_BURST:
+  //     // add a simple burst to the tuning parameters
+  //     for( i = 0; i < TVSAT_MAX_DISEQC_CMDS; ++i )
+  //     {
+  //       if( dev->tuning_parameters.diseqc[ i ].type == 0 )
+  //         break;
+  //     }
+
+  //     if( i == TVSAT_MAX_DISEQC_CMDS )
+  //       return -EFAULT;
+
+  //     dev->tuning_parameters.diseqc[ i ].type       = 2;
+  //     dev->tuning_parameters.diseqc[ i ].burst_data = (uint16_t)arg;
+
+  //     return 0;
+
+  //   case FE_SET_TONE:
+  //     // sets the tone parameter
+  //     dev->tuning_parameters.band = ( unsigned int )arg;
+
+  //     return 0;
+
+  //   case FE_SET_VOLTAGE:
+  //     // sets the voltage parameter
+  //     dev->tuning_parameters.polarization = ( unsigned int )arg;
+
+  //     return 0;
+
+  //   case FE_ENABLE_HIGH_LNB_VOLTAGE:
+  //     // not implemented
+  //     return 0;
+
+  //   case FE_READ_STATUS:
+  //     //TODO: return something more sensible
+  //     //
+  //     // this is not really necessary because all the major dvb programs
+  //     // rely on fe_get_event to get locking information
+  //     status = FE_HAS_SIGNAL | FE_HAS_LOCK | FE_HAS_SYNC | FE_HAS_CARRIER | FE_HAS_VITERBI;
+
+  //     return copy_to_user( (void  __user *)arg, &status, sizeof( fe_status_t ) );
+
+  //   case FE_READ_BER:
+  //     //TODO: we always return the optimal values here until the dvb api maintainers
+  //     //      have decided on some standardized format
+  //     ber = 0;
+
+  //     return copy_to_user( (void __user *)arg, &ber, sizeof( __u32 ) );
+
+  //   case FE_READ_SIGNAL_STRENGTH:
+  //     //TODO: see above
+  //     sst = 0xffff;
+
+  //     return copy_to_user( ( void __user *)arg, &sst, sizeof( __u32 ) );
+
+  //   case FE_READ_SNR:
+  //     //TODO: see above
+  //     snr = 0xffff;
+
+  //     return copy_to_user( ( void __user *)arg, &snr, sizeof( __u32 ) );
+
+  //   case FE_READ_UNCORRECTED_BLOCKS:
+  //     //TODO: see above
+  //     return 0;
+
+  //   case FE_SET_FRONTEND:
+  //     // sets the remaining tuning parameters
+  //     // we assume that this gets called after set_tone and set_voltage
+  //     if( !arg )
+  //       return -EINVAL;
+
+  //     if( copy_from_user( &fe_param, (struct dvb_frontend_parameters __user *)arg, sizeof( struct dvb_frontend_parameters ) ) )
+  //       return -EFAULT;
+
+  //     dev->tuning_parameters.fec          = fe_param.u.qpsk.fec_inner;
+  //     dev->tuning_parameters.frequency    = fe_param.frequency;
+  //     dev->tuning_parameters.inversion    = fe_param.inversion;
+
+  //     // the next three are S2 specific and are not supported by the dvb api v3
+  //     // waiting patiently for v5 to make it into the mainline kernel...
+  //     dev->tuning_parameters.modulation   = 0;
+  //     dev->tuning_parameters.pilot        = 0;
+  //     dev->tuning_parameters.roll_off     = 2;
+
+  //     dev->tuning_parameters.symbol_rate  = fe_param.u.qpsk.symbol_rate;
+
+  //     tvsat_add_tune_event( &dev->events, &dev->tuning_parameters );
+
+  //     for( i = 0; i < TVSAT_MAX_DISEQC_CMDS; ++i )
+  //       dev->tuning_parameters.diseqc[ i ].type = 0;
+
+  //     return 0;
+
+  //   case FE_GET_FRONTEND:
+  //     // not implemented
+  //     return 0;
+
+  //   case FE_GET_EVENT:
+  //     // this is the absolute minimum implementation
+  //     // we only have one event saying that the device is now tuned
+  //     event = ( void __user *)arg;
+
+  //     if( dev->tuned == 0 )
+  //     {
+  //       if( file->f_flags & O_NONBLOCK )
+  //         return -EAGAIN;
+  //     }
+
+  //     dev->tuned = 0;
+
+  //     return tvsat_frontend_ioctl( /* inode, */ file, FE_READ_STATUS, ( unsigned long )&event->status );
+
+  //   case FE_DISHNETWORK_SEND_LEGACY_CMD:
+  //     // not implemented
+  //     return 0;
+
+  //   default:
+  //     break;
+  // }
+
+  // return 0;
 }
 
 // input is always possible because our frontend doesn't block
