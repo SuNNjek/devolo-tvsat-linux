@@ -557,17 +557,15 @@ static long tvsat_frontend_ioctl( struct file *file, unsigned cmd, unsigned long
       tvps = (void *)arg;
       tvp = memdup_user((void __user *)tvps->props, tvps->num * sizeof(*tvp));
 
-      //if( copy_from_user( tvps, (struct dtv_properties __user *)arg, sizeof( struct dtv_properties ) ) )
-      //  return -EFAULT;
-
       for( i = 0; i < tvps->num; i++ )
       {
         dtv_property_get(dev, tvp + i, file);
       }
       
       if (copy_to_user((void __user *)tvps->props, tvp, tvps->num * sizeof(struct dtv_property)))
-		return -EFAULT;
+        return -EFAULT;
 
+      kfree(tvp);
       break;
 
     case FE_SET_PROPERTY:
@@ -577,14 +575,12 @@ static long tvsat_frontend_ioctl( struct file *file, unsigned cmd, unsigned long
       tvps = (void *)arg;
       tvp = memdup_user((void __user *)tvps->props, tvps->num * sizeof(*tvp));
 
-      //if( copy_from_user( tvps, (struct dtv_properties __user *)arg, sizeof( struct dtv_properties ) ) )
-      //  return -EFAULT;
-
       for( i = 0; i < tvps->num; i++ )
       {
         dtv_property_set(dev, file, (tvp + i)->cmd, (tvp + i)->u.data);
       }
-
+      
+      kfree(tvp);
       break;
   }
 
