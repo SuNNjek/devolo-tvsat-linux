@@ -77,6 +77,7 @@ struct tvsat_tuning_parameters
   unsigned int                    polarization;
   unsigned int                    roll_off;
   unsigned int                    symbol_rate;
+  unsigned int                    delivery_system;
 };
 
 struct tvsat_pid_selection

@@ -107,7 +107,7 @@ static struct tvsat *tvsat = NULL;
 // the caps and some of the other parameters were chosen conservatively
 // they may not represent the full set of capabilities of the devices
 static struct dvb_frontend_info tvsat_frontend_info = {
-  .caps = FE_CAN_QPSK | FE_CAN_FEC_1_2 | FE_CAN_FEC_2_3 | FE_CAN_FEC_3_4 |
+  .caps = FE_CAN_QPSK | FE_CAN_2G_MODULATION | FE_CAN_FEC_1_2 | FE_CAN_FEC_2_3 | FE_CAN_FEC_3_4 |
           FE_CAN_FEC_5_6 | FE_CAN_FEC_7_8 | FE_CAN_FEC_AUTO,
   .frequency_min = FREQ_MIN,
   .frequency_max = FREQ_MAX,
@@ -264,7 +264,29 @@ static long dtv_property_set(struct tvsat_device *dev, struct file *file, u32 cm
       break;
 
     case DTV_MODULATION:
-      dev->tuning_parameters.modulation = data;
+      switch (data)
+      {
+        case QPSK:
+          dev->tuning_parameters.modulation = 0;
+          break;
+
+        case PSK_8:
+          dev->tuning_parameters.modulation = 7;
+          break;
+
+        // TODO: Don't know the values for these but they don't seem to get used
+        // case APSK_16:
+        //   dev->tuning_parameters.modulation = 2;
+        //   break;
+
+        // case APSK_32:
+        //   dev->tuning_parameters.modulation = 3;
+        //   break;
+
+        default:
+          r = -EINVAL;
+          break;
+      }
       break;
 
     case DTV_INVERSION:
@@ -280,15 +302,56 @@ static long dtv_property_set(struct tvsat_device *dev, struct file *file, u32 cm
       break;
 
     case DTV_PILOT:
-      dev->tuning_parameters.pilot = data;
+      switch (data)
+      {
+        default:
+        case PILOT_OFF:
+          dev->tuning_parameters.pilot = 0;
+          break;
+
+        case PILOT_ON:
+          dev->tuning_parameters.pilot = 1;
+          break;
+
+        case PILOT_AUTO:
+          dev->tuning_parameters.pilot = 2;
+          break;
+      }
       break;
 
     case DTV_ROLLOFF:
-      dev->tuning_parameters.roll_off = data;
+      switch (data)
+      {
+        case ROLLOFF_20:
+          dev->tuning_parameters.roll_off = 0;
+          break;
+        case ROLLOFF_25:
+          dev->tuning_parameters.roll_off = 1;
+          break;
+
+        default:
+        case ROLLOFF_35:
+          dev->tuning_parameters.roll_off = 2;
+          break;
+      }
       break;
 
     case DTV_DELIVERY_SYSTEM:
-      // TODO: ???
+      if (data == SYS_DVBS) {
+        dev->tuning_parameters.delivery_system = 0;
+
+        // Reset to default values (don't know if that's necessary but just to make sure)
+        dev->tuning_parameters.modulation   = 0;
+        dev->tuning_parameters.pilot        = 0;
+        dev->tuning_parameters.roll_off     = 2;
+      }
+      else if (data == SYS_DVBS2) {
+        dev->tuning_parameters.delivery_system = 1;
+      }
+      else {
+        r = -EINVAL;
+      }
+
       break;
 
     case DTV_VOLTAGE:
@@ -316,7 +379,26 @@ static int dtv_property_get(struct tvsat_device *dev, struct dtv_property *tvp, 
       break;
 
     case DTV_MODULATION:
-      tvp->u.data = dev->tuning_parameters.modulation;
+      switch (dev->tuning_parameters.modulation)
+      {
+        default:
+        case 0:
+          tvp->u.data = QPSK;
+          break;
+
+        case 7:
+          tvp->u.data = PSK_8;
+          break;
+
+        // TODO: Don't know the values for these but they don't seem to get used
+        // case 2:
+        //   tvp->u.data = APSK_16;
+        //   break;
+
+        // case 3:
+        //   tvp->u.data = APSK_32;
+        //   break;
+      }
       break;
 
     case DTV_INVERSION:
@@ -332,11 +414,39 @@ static int dtv_property_get(struct tvsat_device *dev, struct dtv_property *tvp, 
       break;
 
     case DTV_PILOT:
-      tvp->u.data = dev->tuning_parameters.pilot;
+      switch (dev->tuning_parameters.pilot)
+      {
+        default:
+        case 0:
+          tvp->u.data = PILOT_OFF;
+          break;
+
+        case 1:
+          tvp->u.data = PILOT_ON;
+          break;
+
+        case 2:
+          tvp->u.data = PILOT_AUTO;
+          break;
+      }
       break;
 
     case DTV_ROLLOFF:
-      tvp->u.data = dev->tuning_parameters.roll_off;
+      switch (dev->tuning_parameters.roll_off)
+      {
+        case 0:
+          tvp->u.data = ROLLOFF_20;
+          break;
+
+        case 1:
+          tvp->u.data = ROLLOFF_25;
+          break;
+
+        case 2:
+        default:
+          tvp->u.data = ROLLOFF_35;
+          break;
+      }
       break;
 
     case DTV_VOLTAGE:
@@ -348,12 +458,13 @@ static int dtv_property_get(struct tvsat_device *dev, struct dtv_property *tvp, 
       break;
 
     case DTV_DELIVERY_SYSTEM:
-      tvp->u.data = SYS_DVBS;
+      tvp->u.data = dev->tuning_parameters.delivery_system ? SYS_DVBS2 : SYS_DVBS;
       break;
 
-    case DTV_ENUM_DELSYS:   // Support only DVB-S for now
+    case DTV_ENUM_DELSYS:
       tvp->u.buffer.data[0] = SYS_DVBS;
-      tvp->u.buffer.len = 1;
+      tvp->u.buffer.data[1] = SYS_DVBS2;
+      tvp->u.buffer.len = 2;
       break;
       
     case DTV_STAT_SIGNAL_STRENGTH:
@@ -514,6 +625,7 @@ static long tvsat_frontend_ioctl( struct file *file, unsigned cmd, unsigned long
 
       // the next three are S2 specific and are not supported by the dvb api v3
       // waiting patiently for v5 to make it into the mainline kernel...
+      dev->tuning_parameters.delivery_system = SYS_DVBS;
       dev->tuning_parameters.modulation   = 0;
       dev->tuning_parameters.pilot        = 0;
       dev->tuning_parameters.roll_off     = 2;

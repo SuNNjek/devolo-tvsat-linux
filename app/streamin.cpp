@@ -302,10 +302,21 @@ int CTVSatStreamIn::receiveResponse( uint16_t cmd ) const
     return -2;
   }
 
+#if _DEBUG
+  if( ntohs( rh->mCommand ) == cCmdFeReadStatus )
+  {
+    ResponseFeReadStatus *rfrs = ( ResponseFeReadStatus * )rh;
+    uint16_t status = ntohs( rfrs->mData );
+
+    if (status != 0)
+      logDbg( "Current Status: %x", status );
+  }
+#endif
+
   // check if this is a response to the requested command
   if( ntohs( rh->mCommand ) != cmd )
   {
-    logDbg( "Received response, but to some other command: %u", ntohs( rh->mCommand ) );
+    logDbg( "Received response, but to some other command: 0x%x", ntohs( rh->mCommand ) );
     return -1;
   }
 

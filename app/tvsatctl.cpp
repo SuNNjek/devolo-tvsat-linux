@@ -286,8 +286,9 @@ void CTVSatCtl::stop()
 //////////////////////////////////////////////////////////////////////////
 void CTVSatCtl::tune( const tvsat_tuning_parameters *tune )
 {
-  logDbg( "Freq: %u, Band: %s, Pol: %s, Sym: %u, Fec: %u, Pilot: %u, Roll off: %u\n", tune->frequency, tune->band ? "low" : "high",
-          tune->polarization ? "horizontal" : "vertical", tune->symbol_rate, tune->fec, tune->pilot, tune->roll_off );
+  logDbg( "Type: %s, Freq: %u, Band: %s, Pol: %s, Sym: %u, Fec: %u, Modulation: %u, Pilot: %u, Roll off: %u\n", tune->delivery_system ? "DVB-S2" : "DVB-S",
+          tune->frequency, tune->band ? "low" : "high", tune->polarization ? "horizontal" : "vertical", tune->symbol_rate, tune->fec,
+          tune->modulation, tune->pilot, tune->roll_off );
 
   m_sin->setTuningParameters( tune );
   m_sin->start();
