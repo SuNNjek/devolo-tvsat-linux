@@ -41,9 +41,15 @@
 #include <linux/slab.h>
 #include <asm/io.h>
 
-#include <dvbdev.h>
-#include <dmxdev.h>
-#include <dvb_demux.h>
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4,15,0)
+  #include <dvbdev.h>
+  #include <dmxdev.h>
+  #include <dvb_demux.h>
+#else
+  #include <media/dvbdev.h>
+  #include <media/dmxdev.h>
+  #include <media/dvb_demux.h>
+#endif
 
 #include "../include/tvsat.h"
 #include "natbus.h"
