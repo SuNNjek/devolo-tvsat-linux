@@ -20,9 +20,7 @@ INIT_UNINSTALL_CMD:=$(shell if test -x "`which update-rc.d 2> /dev/null`";\
 		fi;\
 	fi)
 
-all: make_subdirs
-	cd app; $(MAKE)
-	cd module; $(MAKE)
+all: make_subdirs build_module build_app
 
 clean: make_subdirs
 	cd app; $(MAKE) clean
@@ -32,20 +30,7 @@ distclean: make_subdirs
 	cd app; $(MAKE) distclean
 	cd module; $(MAKE) distclean
 
-install: make_subdirs
-	cd app; $(MAKE) install
-	cd module; $(MAKE) install
-	
-	echo "* Installing init script"
-	install -m 0755 tvsatd.init /etc/init.d/tvsatd
-	$(INIT_INSTALL_CMD)
-	
-	if test ! -e /etc/tvsatd/tvsatd.conf; then\
-		echo "* Installing default config";\
-		install -d -o0 -g0 /etc/tvsatd;\
-		install -m 0644 -o0 -g0 tvsatd.conf /etc/tvsatd/tvsatd.conf;\
-	fi
-	
+install: make_subdirs install_module install_app install_init
 	echo
 	echo " ----------------------------------------------------"
 	echo "| Installation complete                              |"
@@ -55,14 +40,39 @@ install: make_subdirs
 	echo "|   /etc/init.d/tvsatd start                         |"
 	echo " ----------------------------------------------------"
 
-uninstall:
-	cd app; $(MAKE) uninstall
-	cd module; $(MAKE) uninstall
+uninstall: uninstall_module uninstall_app uninstall_init
+
+make_subdirs:
+	true
+
+build_module:
+	cd module; $(MAKE)
+build_app:
+	cd app; $(MAKE)
+
+install_module:
+	cd module; $(MAKE) install
+install_app:
+	cd app; $(MAKE) install
+
+install_init:
+	echo "* Installing init script"
+	install -m 0755 tvsatd.init /etc/init.d/tvsatd
+	$(INIT_INSTALL_CMD)
 	
+	if test ! -e /etc/tvsatd/tvsatd.conf; then\
+		echo "* Installing default config";\
+		install -d -o0 -g0 /etc/tvsatd;\
+		install -m 0644 -o0 -g0 tvsatd.conf /etc/tvsatd/tvsatd.conf;\
+	fi
+
+uninstall_module:
+	cd module; $(MAKE) uninstall
+uninstall_app:
+	cd app; $(MAKE) uninstall
+uninstall_init:
 	echo "* Removing init script"
 	-$(INIT_UNINSTALL_CMD)
 	-$(RM) /etc/init.d/tvsatd
 	-$(RM) /var/run/tvsatd.pid
 
-make_subdirs:
-	true
