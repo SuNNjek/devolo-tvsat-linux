@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 //////////////////////////////////////////////////////////////////////////
 // NAT bus - a virtual bus for Network Attached Tuner devices
 // Copyright (C) 2008 devolo AG. All rights reserved.
@@ -29,23 +30,21 @@
 
 #define NATBUS_ID_SIZE 20
 
-struct nat_driver
-{
-  struct device_driver      driver;
-  struct module            *module;
-  char                     *version;
+struct nat_driver {
+	struct device_driver      driver;
+	struct module            *module;
+	char                     *version;
 };
 
-struct nat_device
-{
-  struct device       device;
-  struct nat_driver  *driver;
-  char               *name;
+struct nat_device {
+	struct device       device;
+	struct nat_driver  *driver;
+	char               *name;
 };
 
 extern struct bus_type natbus_type;
 
-int register_nat_device( struct nat_device *natdev );
-int register_nat_driver( struct nat_driver *natdrv );
+int register_nat_device(struct nat_device *natdev);
+int register_nat_driver(struct nat_driver *natdrv);
 
 #endif

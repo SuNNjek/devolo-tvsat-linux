@@ -1,4 +1,5 @@
-//////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: GPL-2.0-or-later
+//
 // NAT bus - a virtual bus for Network Attached Tuner devices
 // Copyright (C) 2008 devolo AG. All rights reserved.
 //
@@ -27,100 +28,99 @@
 #include <linux/version.h>
 #include <linux/device.h>
 
-MODULE_LICENSE("GPL v2");
-
 #include "natbus.h"
 
-static int natbus_match( struct device *dev, struct device_driver *driver )
+MODULE_AUTHOR("Michael Beckers");
+MODULE_LICENSE("GPL v2");
+
+static int natbus_match(struct device *dev, struct device_driver *driver)
 {
-  if( !dev || !driver )
-    return -EINVAL;
+	if (!dev || !driver)
+		return -EINVAL;
 
-  if( strncmp( dev->bus->name, "nat", 3 ) != 0 )
-    return -EINVAL;
+	if (strncmp(dev->bus->name, "nat", 3) != 0)
+		return -EINVAL;
 
-  if( strncmp( driver->bus->name, "nat", 3 ) != 0 )
-    return -EINVAL;
+	if (strncmp(driver->bus->name, "nat", 3) != 0)
+		return -EINVAL;
 
-  return driver->probe( dev );
+	return driver->probe(dev);
 }
 
 struct bus_type natbus_type = {
-  .name     = "nat",
-  .match    = natbus_match,
+	.name     = "nat",
+	.match    = natbus_match,
 };
 
-static void natbus_dev_release( struct device *dev )
+static void natbus_dev_release(struct device *dev)
 {
-  if( dev && dev_name(dev) )
-    printk( KERN_DEBUG "NAT: releasing device (%s)\n", dev_name(dev) );
-  else
-    printk( KERN_ERR "%s(): Invalid release call\n", __FUNCTION__ );
+	if (dev && dev_name(dev))
+		dev_dbg(dev, "NAT: releasing device (%s)\n", dev_name(dev));
+	else
+		dev_err(dev, "%s(): Invalid release call\n", __func__);
 }
 
 struct device natbus_dev = {
-  //.bus_id   = "0.0.0.0",
-  .release  = natbus_dev_release
+	//.bus_id   = "0.0.0.0",
+	.release  = natbus_dev_release
 };
 
-int register_nat_device( struct nat_device *natdev )
+int register_nat_device(struct nat_device *natdev)
 {
-  if( !natdev )
-    return -EINVAL;
+	if (!natdev)
+		return -EINVAL;
 
-  natdev->device.bus = &natbus_type;
-  natdev->device.parent = &natbus_dev;
-  natdev->device.release = natbus_dev_release;
-  dev_set_name(&natdev->device, natdev->name);
-  //strncpy( natdev->device.bus_id, natdev->name, NATBUS_ID_SIZE );
-  //strncpy( dev_name( &natdev->device ), natdev->name, NATBUS_ID_SIZE );
+	natdev->device.bus = &natbus_type;
+	natdev->device.parent = &natbus_dev;
+	natdev->device.release = natbus_dev_release;
+	dev_set_name(&natdev->device, natdev->name);
+	//strncpy( natdev->device.bus_id, natdev->name, NATBUS_ID_SIZE );
+	//strncpy( dev_name( &natdev->device ), natdev->name, NATBUS_ID_SIZE );
 
-  printk( KERN_DEBUG "NAT: registering device (%s)\n", dev_name(&natdev->device) );
+	dev_dbg(&natdev->device, "NAT: registering device\n");
 
-  return device_register( &natdev->device );
+	return device_register(&natdev->device);
 }
-EXPORT_SYMBOL( register_nat_device );
+EXPORT_SYMBOL(register_nat_device);
 
-int register_nat_driver( struct nat_driver *natdrv )
+int register_nat_driver(struct nat_driver *natdrv)
 {
-  if( !natdrv )
-    return -EINVAL;
+	if (!natdrv)
+		return -EINVAL;
 
-  natdrv->driver.bus = &natbus_type;
-  return driver_register( &natdrv->driver );
+	natdrv->driver.bus = &natbus_type;
+	return driver_register(&natdrv->driver);
 }
-EXPORT_SYMBOL( register_nat_driver );
+EXPORT_SYMBOL(register_nat_driver);
 
-static int __init natbus_module_init( void )
+static int __init natbus_module_init(void)
 {
-  int ret;
+	int ret;
 
-  printk( KERN_DEBUG "Initializing nat bus\n" );
+	printk(KERN_DEBUG "Initializing nat bus\n");
 
-  if( (ret = bus_register( &natbus_type )) )
-  {
-    printk( KERN_ERR "%s(): Failed to register nat bus\n", __FUNCTION__ );
-    return ret;
-  }
+	ret = bus_register(&natbus_type);
+	if (ret) {
+		printk(KERN_ERR "%s(): Failed to register nat bus\n", __func__);
+		return ret;
+	}
 
-  dev_set_name( &natbus_dev, "0.0.0.0" );
-  if( (ret = device_register( &natbus_dev )) )
-  {
-    printk( KERN_ERR "%s(): Failed to register the nat bus root device (%d)\n", __FUNCTION__, ret );
-    bus_unregister( &natbus_type );
-    return ret;
-  }
+	dev_set_name(&natbus_dev, "0.0.0.0");
+	ret = device_register(&natbus_dev);
+	if (ret) {
+		dev_err(&natbus_dev, "%s(): Failed to register the nat bus root device (%d)\n", __func__, ret);
+		bus_unregister(&natbus_type);
+		return ret;
+	}
 
-  return 0;
-}
-
-static void __exit natbus_module_exit( void )
-{
-  device_unregister( &natbus_dev );
-  bus_unregister( &natbus_type );
+	return 0;
 }
 
-module_init( natbus_module_init );
-module_exit( natbus_module_exit );
+static void __exit natbus_module_exit(void)
+{
+	device_unregister(&natbus_dev);
+	bus_unregister(&natbus_type);
+}
 
-MODULE_AUTHOR( "Michael Beckers" );
+module_init(natbus_module_init);
+module_exit(natbus_module_exit);
