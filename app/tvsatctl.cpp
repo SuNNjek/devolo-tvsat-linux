@@ -40,11 +40,12 @@
 //////////////////////////////////////////////////////////////////////////
 /// Constructor
 //////////////////////////////////////////////////////////////////////////
-CTVSatCtl::CTVSatCtl(std::string &client_ip, std::string &device_ip, uint8_t *device_mac, int adapter_num) {
+CTVSatCtl::CTVSatCtl(std::string &client_ip, std::string &device_ip, uint8_t *device_mac, int adapter_num, bool verbose) {
+    m_verbose = verbose;
     m_init = 1;
     m_is_tuned = 0;
     m_run = 1;
-    m_sin = new CTVSatStreamIn();
+    m_sin = new CTVSatStreamIn(verbose);
 
     m_ip_addr = device_ip;
     memcpy(m_mac_addr, device_mac, 6);
@@ -89,7 +90,8 @@ CTVSatCtl::CTVSatCtl(std::string &client_ip, std::string &device_ip, uint8_t *de
         m_input_dev = open(dev_name, O_RDWR);
         m_sin->setInputDev(m_input_dev);
 
-        logDbg("successfully opened input device %s", dev_name);
+        if (m_verbose)
+            LOG_DBG(m_verbose, "successfully opened input device %s", dev_name);
     } else
         m_init = 0;
 
@@ -143,28 +145,28 @@ void CTVSatCtl::run() {
                 ret = ioctl(m_input_dev, TVS_GET_EVENT, &ev);
 
                 if (ret == 0) {
-                    logDbg("Received event from the kernel:");
+                    LOG_DBG(m_verbose, "Received event from the kernel:");
 
                     switch (ev.type) {
                         case TVSAT_EVENT_PID:
-                            logDbg("start/stop pid");
+                            LOG_DBG(m_verbose, "start/stop pid");
                             selectPID(&ev.event.pid);
                             break;
                         case TVSAT_EVENT_TUNE:
-                            logDbg("tune");
+                            LOG_DBG(m_verbose, "tune");
                             tune(&ev.event.tune);
                             break;
                         case TVSAT_EVENT_CONNECT:
-                            logDbg("connect");
+                            LOG_DBG(m_verbose, "connect");
                             m_sin->connect();
                             break;
                         case TVSAT_EVENT_DISCONNECT:
-                            logDbg("disconnect");
+                            LOG_DBG(m_verbose, "disconnect");
                             m_sin->disconnect();
                             m_sin->stop();
                             break;
                         default:
-                            logDbg("unknown event\n");
+                            LOG_DBG(m_verbose, "unknown event\n");
                     }
                 }
             } while (ret == 0);
@@ -264,7 +266,7 @@ void CTVSatCtl::stop() {
 /// @param tune tuning parameters (frequency, polarization, etc.)
 //////////////////////////////////////////////////////////////////////////
 void CTVSatCtl::tune(const tvsat_tuning_parameters *tune) {
-    logDbg("Type: %s, Freq: %u, Band: %s, Pol: %s, Sym: %u, Fec: %u, Modulation: %u, Pilot: %u, Roll off: %u\n",
+    LOG_DBG(m_verbose, "Type: %s, Freq: %u, Band: %s, Pol: %s, Sym: %u, Fec: %u, Modulation: %u, Pilot: %u, Roll off: %u\n",
            tune->delivery_system ? "DVB-S2" : "DVB-S",
            tune->frequency, tune->band ? "low" : "high", tune->polarization ? "horizontal" : "vertical",
            tune->symbol_rate, tune->fec,

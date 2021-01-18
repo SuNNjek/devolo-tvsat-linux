@@ -38,25 +38,24 @@
 //////////////////////////////////////////////////////////////////////////
 /// Configuration options
 //////////////////////////////////////////////////////////////////////////
-struct config_t
-{
-	uint16_t				broadcast_interval;
-	std::map< std::string, uint8_t >	device_map;
-	std::string				interface;
+struct config_t {
+    uint16_t broadcast_interval;
+    std::map<std::string, uint8_t> device_map;
+    std::string interface;
 };
 
 //////////////////////////////////////////////////////////////////////////
 /// Regular expressions that match the configuration options
 //////////////////////////////////////////////////////////////////////////
-struct config_regex_t
-{
-	regex_t broadcast_interval;
-	regex_t device_map_ip;
-	regex_t device_map_mac;
-	regex_t interface;
+struct config_regex_t {
+    regex_t broadcast_interval;
+    regex_t device_map_ip;
+    regex_t device_map_mac;
+    regex_t interface;
 };
 
-void defaultConfig( config_t *config );
-void loadConfig( config_t *config, const char *filename );
+void defaultConfig(config_t *config);
+
+void loadConfig(config_t *config, const char *filename);
 
 #endif

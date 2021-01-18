@@ -30,6 +30,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <getopt.h>
 #include <iostream>
 #include <list>
 #include <net/if.h>
@@ -41,6 +42,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "config.h"
 #include "discover.h"
@@ -86,8 +88,20 @@ static void daemonize() {
     if (f) {
         fprintf(f, "%u", getpid());
         fclose(f);
-    } else
+    } else {
         exit(1);
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+/// Prints out a message that describes how to use the program
+//////////////////////////////////////////////////////////////////////////
+static void printHelp() {
+    printf("tvsatctl is a program for controlling the devolo dLAN TV-Sat network receiver.\n\n");
+    printf("It takes the following options:\n");
+    printf("-d|--daemon  - runs the program as a daemon\n");
+    printf("-v|--verbose - outputs more logs to help with debugging\n");
+    printf("-h|--help    - displays this message\n");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -105,7 +119,8 @@ static void updateDeviceLists(std::list<STVSatDev> &fdevs,
                               std::list<STVSatDev> &ndevs,
                               std::map<STVSatDev, int> &mdevs,
                               std::list<CTVSatCtl *> &ctls,
-                              const config_t &cfg) {
+                              const config_t &cfg,
+                              bool verbose) {
     std::list<STVSatDev>::iterator fd_it, nd_it;
     std::map<STVSatDev, int>::iterator md_it;
     std::list<CTVSatCtl *>::iterator c_it;
@@ -179,7 +194,7 @@ static void updateDeviceLists(std::list<STVSatDev> &fdevs,
 
         CTVSatCtl *ctl = new CTVSatCtl(nd_it->net_if.if_ip,
                                        nd_it->dev_ip, nd_it->dev_mac,
-                                       adapter_num);
+                                       adapter_num, verbose);
         ctls.insert(ctls.end(), ctl);
         ctl->runThreaded();
     }
@@ -254,11 +269,34 @@ int main(int argc, char **argv) {
     signal(SIGHUP, handleExitSignal);
     signal(SIGINT, handleExitSignal);
 
-    // if we should start as a daemon, fork to background and create a
-    // pid file
-    if (argc > 1)
-        if (strcmp(argv[1], "-d") == 0)
-            daemonize();
+    static struct option options[] = {
+            { "daemon", no_argument, 0, 'd' },
+            { "verbose", no_argument, 0, 'v' },
+            { "help", no_argument, 0, 'h' },
+            { 0, 0, 0, 0},
+    };
+
+    int opt = 0, long_index = 0;
+    bool verbose = false;
+    while ((opt = getopt_long(argc, argv, "dvh", options, &long_index)) >= 0) {
+        switch (opt) {
+            // if we should start as a daemon, fork to background and create a
+            // pid file
+            case 'd':
+                daemonize();
+                break;
+
+            case 'v':
+                verbose = true;
+                break;
+
+            case '?':
+                printf("\n");
+            case 'h':
+                printHelp();
+                exit(0);
+        }
+    }
 
     openlog("tvsatd", 0, LOG_ERR);
 
@@ -287,7 +325,7 @@ int main(int argc, char **argv) {
 
         findDevices(found_devs, config.interface);
         updateDeviceLists(found_devs, new_devs, missing_devs,
-                          tvsat_ctls, config);
+                          tvsat_ctls, config, verbose);
         gettimeofday(&tv2, 0);
 
         // check for new devices only every few seconds and sleep

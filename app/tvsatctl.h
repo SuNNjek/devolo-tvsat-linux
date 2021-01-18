@@ -41,43 +41,46 @@
 //////////////////////////////////////////////////////////////////////////
 /// dLAN TV Sat Control
 //////////////////////////////////////////////////////////////////////////
-class CTVSatCtl
-{
-  public:
-    CTVSatCtl   ( std::string &client_ip, std::string &device_ip, uint8_t *device_mac, int adapter_num );
-    ~CTVSatCtl  ();
+class CTVSatCtl {
+public:
+    CTVSatCtl(std::string &client_ip, std::string &device_ip, uint8_t *device_mac, int adapter_num, bool verbose);
 
-    const std::string &getTVSatIP()
-    { return m_ip_addr; }
+    ~CTVSatCtl();
 
-    const uint8_t *getTVSatMAC()
-    { return m_mac_addr; }
+    const std::string &getTVSatIP() { return m_ip_addr; }
 
-    void  run         ();
-    void  runThreaded ();
-    void  stop        ();
+    const uint8_t *getTVSatMAC() { return m_mac_addr; }
 
-    static int  sleepMS   ( double ms );
+    void run();
 
-  private:
-    CTVSatCtl () {};
+    void runThreaded();
 
-    void        handleExitSignal  ( int signal );
-    void        selectPID         ( const tvsat_pid_selection *pid );
-    void        tune              ( const tvsat_tuning_parameters *tune );
+    void stop();
 
-    static void *startThread  ( void *tvsat_ctl );
+    static int sleepMS(double ms);
 
-    tvsat_dev_id          m_dev_id;
-    int                   m_init;
-    int                   m_input_dev;
-    std::string           m_ip_addr;
-    int                   m_is_tuned;
-    uint8_t               m_mac_addr[ 6 ];
-    int                   m_run;
-    pthread_mutex_t       m_run_access;
-    CTVSatStreamIn       *m_sin;
-    pthread_t             m_thread;
+private:
+    CTVSatCtl() {};
+
+    void handleExitSignal(int signal);
+
+    void selectPID(const tvsat_pid_selection *pid);
+
+    void tune(const tvsat_tuning_parameters *tune);
+
+    static void *startThread(void *tvsat_ctl);
+
+    tvsat_dev_id m_dev_id;
+    int m_init;
+    int m_input_dev;
+    std::string m_ip_addr;
+    int m_is_tuned;
+    uint8_t m_mac_addr[6];
+    int m_run;
+    pthread_mutex_t m_run_access;
+    CTVSatStreamIn *m_sin;
+    pthread_t m_thread;
+    bool m_verbose;
 };
 
 #endif

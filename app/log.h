@@ -32,11 +32,18 @@
 
 #include <syslog.h>
 
+#define LOG_DBG(writeLog, fmt, args...) do { \
+    if (writeLog)                            \
+        logDbg(fmt, ##args);                 \
+} while (0)
+
 //////////////////////////////////////////////////////////////////////////
 // EXTERN PROTOTYPES
 //////////////////////////////////////////////////////////////////////////
-void  logDbg  ( const char *fmt, ... ) __attribute__(( format( printf, 1, 2 ) ));
-void  logErr  ( const char *fmt, ... ) __attribute__(( format( printf, 1, 2 ) ));
-void  logInf  ( const char *fmt, ... ) __attribute__(( format( printf, 1, 2 ) ));
+void logDbg(const char *fmt, ...) __attribute__(( format( printf, 1, 2 )));
+
+void logErr(const char *fmt, ...) __attribute__(( format( printf, 1, 2 )));
+
+void logInf(const char *fmt, ...) __attribute__(( format( printf, 1, 2 )));
 
 #endif

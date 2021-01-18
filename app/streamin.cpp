@@ -44,7 +44,8 @@
 /// Opens a listening socket for incoming stream data and sets the initial
 /// state of the state machine to 'disconnected'
 //////////////////////////////////////////////////////////////////////////
-CTVSatStreamIn::CTVSatStreamIn() {
+CTVSatStreamIn::CTVSatStreamIn(bool verbose) {
+    m_verbose = verbose;
     m_do_connect = 0;
     m_do_tune = 0;
     m_is_tuned = 0;
@@ -99,7 +100,7 @@ void CTVSatStreamIn::addPID(uint16_t pid) {
 /// Resets the connection to the NAT device
 //////////////////////////////////////////////////////////////////////////
 void CTVSatStreamIn::cleanUp() {
-    logDbg("Resetting connection");
+    LOG_DBG(m_verbose, "Resetting connection");
 
     m_sock.close();
     m_sock.open(0);
@@ -158,7 +159,7 @@ int CTVSatStreamIn::receiveConnectResponse() const {
     if (receiveResponse(cCmdConnect) != 0)
         return -1;
 
-    logDbg("Received response to connect request");
+    LOG_DBG(m_verbose, "Received response to connect request");
 
     return 0;
 }
@@ -173,7 +174,7 @@ int CTVSatStreamIn::receiveDisconnectResponse() const {
     if (receiveResponse(cCmdDisconnect) != 0)
         return -1;
 
-    logDbg("Received response to disconnect request");
+    LOG_DBG(m_verbose, "Received response to disconnect request");
 
     return 0;
 }
@@ -188,7 +189,7 @@ int CTVSatStreamIn::receiveDiseqcSendBurstResponse() const {
     if (receiveResponse(cCmdFeDiseqcSendBurst) != 0)
         return -1;
 
-    logDbg("Received response to DiSEqC send burst request");
+    LOG_DBG(m_verbose, "Received response to DiSEqC send burst request");
 
     return 0;
 }
@@ -203,7 +204,7 @@ int CTVSatStreamIn::receiveDiseqcSendMasterCommandResponse() const {
     if (receiveResponse(cCmdFeDiseqcSendMasterCommand) != 0)
         return -1;
 
-    logDbg("Received response to DiSEqC send master command request");
+    LOG_DBG(m_verbose, "Received response to DiSEqC send master command request");
 
     return 0;
 }
@@ -234,7 +235,7 @@ int CTVSatStreamIn::receivePrepareToneResponse() const {
     if (receiveResponse(cCmdFeSetTone) != 0)
         return -1;
 
-    logDbg("Received response to prepare tone request");
+    LOG_DBG(m_verbose, "Received response to prepare tone request");
 
     return 0;
 }
@@ -249,7 +250,7 @@ int CTVSatStreamIn::receiveResetFilterResponse() const {
     if (receiveResponse(cCmdTseStart2) != 0)
         return -1;
 
-    logDbg("Received response to reset filter request");
+    LOG_DBG(m_verbose, "Received response to reset filter request");
 
     return 0;
 }
@@ -282,20 +283,17 @@ int CTVSatStreamIn::receiveResponse(uint16_t cmd) const {
         return -2;
     }
 
-#if _DEBUG
-    if( ntohs( rh->mCommand ) == cCmdFeReadStatus )
-    {
-      ResponseFeReadStatus *rfrs = ( ResponseFeReadStatus * )rh;
-      uint16_t status = ntohs( rfrs->mData );
+    if (ntohs(rh->mCommand) == cCmdFeReadStatus) {
+        ResponseFeReadStatus *rfrs = (ResponseFeReadStatus *) rh;
+        uint16_t status = ntohs(rfrs->mData);
 
-      if (status != 0)
-        logDbg( "Current Status: %x", status );
+        if (status != 0)
+            LOG_DBG(m_verbose, "Current Status: %x", status);
     }
-#endif
 
     // check if this is a response to the requested command
     if (ntohs(rh->mCommand) != cmd) {
-        logDbg("Received response, but to some other command: 0x%x", ntohs(rh->mCommand));
+        LOG_DBG(m_verbose, "Received response, but to some other command: 0x%x", ntohs(rh->mCommand));
         return -1;
     }
 
@@ -311,7 +309,7 @@ int CTVSatStreamIn::receiveResponse(uint16_t cmd) const {
         uint16_t status = ntohs(rfrs->mData);
 
         if ((status && 0x10))
-            logDbg("Signal locked");
+            LOG_DBG(m_verbose, "Signal locked");
         else
             return 1;
     }
@@ -329,7 +327,7 @@ int CTVSatStreamIn::receiveSetFilterResponse() const {
     if (receiveResponse(cCmdTseStart2) != 0)
         return -1;
 
-    logDbg("Received response to set filter request");
+    LOG_DBG(m_verbose, "Received response to set filter request");
 
     return 0;
 }
@@ -344,7 +342,7 @@ int CTVSatStreamIn::receiveSetFrontendResponse() const {
     if (receiveResponse(cCmdFeSetFrontend) != 0)
         return -1;
 
-    logDbg("Received response to set frontend request");
+    LOG_DBG(m_verbose, "Received response to set frontend request");
 
     return 0;
 }
@@ -359,7 +357,7 @@ int CTVSatStreamIn::receiveSetToneResponse() const {
     if (receiveResponse(cCmdFeSetTone) != 0)
         return -1;
 
-    logDbg("Received response to set tone request");
+    LOG_DBG(m_verbose, "Received response to set tone request");
 
     return 0;
 }
@@ -374,7 +372,7 @@ int CTVSatStreamIn::receiveSetVoltageResponse() const {
     if (receiveResponse(cCmdFeSetVoltage) != 0)
         return -1;
 
-    logDbg("Received response to set voltage request");
+    LOG_DBG(m_verbose, "Received response to set voltage request");
 
     return 0;
 }
@@ -389,7 +387,7 @@ int CTVSatStreamIn::receiveStartResponse() const {
     if (receiveResponse(cCmdStart) != 0)
         return -1;
 
-    logDbg("Received response to start request");
+    LOG_DBG(m_verbose, "Received response to start request");
 
     return 0;
 }
@@ -404,7 +402,7 @@ int CTVSatStreamIn::receiveStopResponse() const {
     if (receiveResponse(cCmdStop) != 0)
         return -1;
 
-    logDbg("Received response to stop request");
+    LOG_DBG(m_verbose, "Received response to stop request");
 
     return 0;
 }
@@ -654,7 +652,7 @@ int CTVSatStreamIn::sendSetFilterRequest(uint16_t *pids, uint16_t num_pids) {
     rts.mNumPids = htons((num_pids <= 168) ? num_pids : 168);
 
     for (int i = 0; (i < num_pids) && (i < 168); ++i) {
-        logDbg("Select PID %u", pids[i]);
+        LOG_DBG(m_verbose, "Select PID %u", pids[i]);
         rts.mPids[i] = htons(pids[i]);
     }
 
@@ -695,7 +693,7 @@ int CTVSatStreamIn::sendSetFrontendRequest() {
     m_try_pilot1 = 0;
 
     if (m_tune->pilot == 2) {
-        logDbg("Automatic detection of pilot symbols: trying without PS");
+        LOG_DBG(m_verbose, "Automatic detection of pilot symbols: trying without PS");
         rfsf.mUnion.mS2.mPilot = htons(0);
         m_try_pilot1 = 1;
     } else
@@ -1283,7 +1281,7 @@ void CTVSatStreamIn::tick() {
                     }
                 } else {
                     if (m_try_pilot1) {
-                        logDbg("Automatic detection of pilot symbols: trying with PS");
+                        LOG_DBG(m_verbose, "Automatic detection of pilot symbols: trying with PS");
 
                         if (m_tune) {
                             m_tune->pilot = 1;

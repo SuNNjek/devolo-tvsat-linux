@@ -39,28 +39,36 @@
 #include "udpsocket.h"
 
 struct SNetIf {
-	std::string	if_bcast;
-	std::string	if_ip;
-	std::string	if_name;
+    std::string if_bcast;
+    std::string if_ip;
+    std::string if_name;
 };
 
 struct STVSatDev {
-	std::string	dev_ip;
-	uint8_t		dev_mac[ 6 ];
-	SNetIf		net_if;
+    std::string dev_ip;
+    uint8_t dev_mac[6];
+    SNetIf net_if;
 };
 
-bool operator<( const STVSatDev &tvs1, const STVSatDev &tvs2 );
-bool operator==( const STVSatDev &tvs1, const STVSatDev &tvs2 );
+bool operator<(const STVSatDev &tvs1, const STVSatDev &tvs2);
 
-int expired( const timeval &stv, int sec = 1 );
-void getIfInfo( std::list< SNetIf > &ifs, const std::string &bind_if );
-void findDevices( std::list< STVSatDev > &found_devs,
-		const std::string &bind_if = "", bool raw = false );
-int parseIP( uint8_t *out, const char *in );
-int parseMAC( uint8_t *out, const char *in );
-ResponseHeader *receiveRaw( const CRawSocket &rsock, uint8_t *buf,
-		int buf_len, size_t exp_size, uint16_t exp_cmd );
-ResponseHeader *receiveUDP( const CUDPSocket &sock, uint8_t *buf,
-		int buf_len, size_t exp_size, uint16_t exp_cmd );
+bool operator==(const STVSatDev &tvs1, const STVSatDev &tvs2);
+
+int expired(const timeval &stv, int sec = 1);
+
+void getIfInfo(std::list<SNetIf> &ifs, const std::string &bind_if);
+
+void findDevices(std::list<STVSatDev> &found_devs,
+                 const std::string &bind_if = "", bool raw = false);
+
+int parseIP(uint8_t *out, const char *in);
+
+int parseMAC(uint8_t *out, const char *in);
+
+ResponseHeader *receiveRaw(const CRawSocket &rsock, uint8_t *buf,
+                           int buf_len, size_t exp_size, uint16_t exp_cmd);
+
+ResponseHeader *receiveUDP(const CUDPSocket &sock, uint8_t *buf,
+                           int buf_len, size_t exp_size, uint16_t exp_cmd);
+
 #endif

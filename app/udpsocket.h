@@ -41,23 +41,27 @@
 /// This class provides a simple abstraction of a UDP socket, which can
 /// be used for both sending and receiving
 //////////////////////////////////////////////////////////////////////////
-class CUDPSocket
-{
+class CUDPSocket {
 
-  public:
-    CUDPSocket  ();
-    ~CUDPSocket ();
+public:
+    CUDPSocket();
 
-    void            close   ();
-    unsigned short  getPort ();
-    bool            open    ( unsigned short port );
-    size_t          receive ( unsigned char *buf, size_t len, bool blocking = true, int timeout = 100000 ) const;
-    bool            send    ( const unsigned char *data, size_t len, const std::string &ipaddr, unsigned short port ) const;
+    ~CUDPSocket();
 
-  private:
-    int             m_fd;
-    unsigned short  m_port;
-    sockaddr_in     m_sock_addr;
+    void close();
+
+    unsigned short getPort();
+
+    bool open(unsigned short port);
+
+    size_t receive(unsigned char *buf, size_t len, bool blocking = true, int timeout = 100000) const;
+
+    bool send(const unsigned char *data, size_t len, const std::string &ipaddr, unsigned short port) const;
+
+private:
+    int m_fd;
+    unsigned short m_port;
+    sockaddr_in m_sock_addr;
 };
 
 #endif

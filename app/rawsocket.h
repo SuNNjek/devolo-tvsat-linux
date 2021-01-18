@@ -39,30 +39,34 @@
 //////////////////////////////////////////////////////////////////////////
 /// Raw socket abstraction class
 //////////////////////////////////////////////////////////////////////////
-class CRawSocket
-{
-	public:
-		CRawSocket() : m_family( AF_PACKET ), m_fd( -1 ),
-				m_ifindex( 0 ),	m_proto( ETH_P_ALL ) {};
-		CRawSocket( int family, int proto, int sub_proto );
-		~CRawSocket();
+class CRawSocket {
+public:
+    CRawSocket() : m_family(AF_PACKET), m_fd(-1),
+                   m_ifindex(0), m_proto(ETH_P_ALL) {};
 
-		void close();
-		bool open( unsigned short port,
-				const char *interface = 0 );
-		size_t receive( unsigned char *buf, size_t len,
-				bool blocking = false,
-				int timeout = 100000 ) const;
-		bool send( const unsigned char *data, size_t data_len,
-				char *addr, size_t addr_len ) const;
+    CRawSocket(int family, int proto, int sub_proto);
 
-	private:
-		int m_family;
-		int m_fd;
-		int m_ifindex;
-		unsigned short m_port;
-		int m_proto;
-		int m_sub_proto;
+    ~CRawSocket();
+
+    void close();
+
+    bool open(unsigned short port,
+              const char *interface = 0);
+
+    size_t receive(unsigned char *buf, size_t len,
+                   bool blocking = false,
+                   int timeout = 100000) const;
+
+    bool send(const unsigned char *data, size_t data_len,
+              char *addr, size_t addr_len) const;
+
+private:
+    int m_family;
+    int m_fd;
+    int m_ifindex;
+    unsigned short m_port;
+    int m_proto;
+    int m_sub_proto;
 };
 
 #endif

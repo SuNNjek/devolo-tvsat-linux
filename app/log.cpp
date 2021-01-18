@@ -35,13 +35,11 @@
 /// Send a debug message to the syslog
 //////////////////////////////////////////////////////////////////////////
 void logDbg(const char *fmt, ...) {
-#ifdef _DEBUG
     va_list va;
 
-    va_start( va, fmt );
-    vsyslog( LOG_MAKEPRI( LOG_DAEMON, LOG_DEBUG ), fmt, va );
-    va_end( va );
-#endif
+    va_start(va, fmt);
+    vsyslog(LOG_MAKEPRI(LOG_DAEMON, LOG_DEBUG), fmt, va);
+    va_end(va);
 }
 
 //////////////////////////////////////////////////////////////////////////
