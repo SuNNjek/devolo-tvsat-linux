@@ -43,58 +43,54 @@
 //////////////////////////////////////////////////////////////////////////
 /// Constructor
 //////////////////////////////////////////////////////////////////////////
-CRawSocket::CRawSocket( int family, int proto, int sub_proto ) :
-		m_family( family ), m_proto( proto ),
-		m_sub_proto( sub_proto )
-{
-	m_fd = -1;
-	m_ifindex = 0;
+CRawSocket::CRawSocket(int family, int proto, int sub_proto) :
+        m_family(family), m_proto(proto),
+        m_sub_proto(sub_proto) {
+    m_fd = -1;
+    m_ifindex = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
 /// Destructor
 //////////////////////////////////////////////////////////////////////////
-CRawSocket::~CRawSocket()
-{
-	if ( m_fd >= 0 )
-		::close( m_fd );
+CRawSocket::~CRawSocket() {
+    if (m_fd >= 0)
+        ::close(m_fd);
 }
 
 //////////////////////////////////////////////////////////////////////////
 /// Closes an open socket
 //////////////////////////////////////////////////////////////////////////
-void CRawSocket::close()
-{
-	if( m_fd >= 0 )
-		::close( m_fd );
+void CRawSocket::close() {
+    if (m_fd >= 0)
+        ::close(m_fd);
 
-	m_fd = -1;
+    m_fd = -1;
 }
 
 //////////////////////////////////////////////////////////////////////////
 /// Opens a socket and binds it to the specified port and interface
 //////////////////////////////////////////////////////////////////////////
-bool CRawSocket::open( unsigned short port, const char *interface )
-{
-	ifreq ifr;
+bool CRawSocket::open(unsigned short port, const char *interface) {
+    ifreq ifr;
 
-	close();
-	m_port = port;
-	m_fd = socket( PF_PACKET, SOCK_RAW, htons( m_proto ) );
+    close();
+    m_port = port;
+    m_fd = socket(PF_PACKET, SOCK_RAW, htons(m_proto));
 
-	if( m_fd < 0 ) {
-		std::cerr << "socket() failed" << std::endl;
-		close();
-		return false;
-	}
+    if (m_fd < 0) {
+        std::cerr << "socket() failed" << std::endl;
+        close();
+        return false;
+    }
 
-	if( interface ) {
-		strncpy( ifr.ifr_name, interface, IFNAMSIZ );
-		ioctl( m_fd, SIOCGIFINDEX, &ifr );
-		m_ifindex = ifr.ifr_ifindex;
-	}
+    if (interface) {
+        strncpy(ifr.ifr_name, interface, IFNAMSIZ);
+        ioctl(m_fd, SIOCGIFINDEX, &ifr);
+        m_ifindex = ifr.ifr_ifindex;
+    }
 
-	return true;
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -106,36 +102,35 @@ bool CRawSocket::open( unsigned short port, const char *interface )
 /// @return true, if successful
 /// @return false, otherwise
 //////////////////////////////////////////////////////////////////////////
-bool CRawSocket::send( const unsigned char *data, size_t data_len,
-		char *addr, size_t addr_len ) const
-{
-	if( addr_len > 8 ) {
-		std::cerr << "address too long" << std::endl;
-		return false;
-	}
+bool CRawSocket::send(const unsigned char *data, size_t data_len,
+                      char *addr, size_t addr_len) const {
+    if (addr_len > 8) {
+        std::cerr << "address too long" << std::endl;
+        return false;
+    }
 
-	if( m_fd < 0) {
-		std::cerr << "socket not open" << std::endl;
-		return false;
-	}
+    if (m_fd < 0) {
+        std::cerr << "socket not open" << std::endl;
+        return false;
+    }
 
-	if( !m_ifindex ) {
-		std::cerr << "no interface specified" << std::endl;
-		return false;
-	}
+    if (!m_ifindex) {
+        std::cerr << "no interface specified" << std::endl;
+        return false;
+    }
 
-	sockaddr_ll sa;
-	memset( &sa, 0, sizeof( sockaddr_ll ) );
-	memcpy( sa.sll_addr, addr, addr_len );
-	sa.sll_halen	= addr_len;
-	sa.sll_family	= m_family;
-	sa.sll_ifindex	= m_ifindex;
+    sockaddr_ll sa;
+    memset(&sa, 0, sizeof(sockaddr_ll));
+    memcpy(sa.sll_addr, addr, addr_len);
+    sa.sll_halen = addr_len;
+    sa.sll_family = m_family;
+    sa.sll_ifindex = m_ifindex;
 
-	if( sendto( m_fd, data, data_len, 0, (sockaddr *)&sa,
-				sizeof( sockaddr_ll ) ) <= 0 )
-		std::cerr << "sendto() failed" << std::endl;
+    if (sendto(m_fd, data, data_len, 0, (sockaddr *) &sa,
+               sizeof(sockaddr_ll)) <= 0)
+        std::cerr << "sendto() failed" << std::endl;
 
-	return true;
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -148,75 +143,74 @@ bool CRawSocket::send( const unsigned char *data, size_t data_len,
 ///		received
 /// @return	0, if no packet has been received
 //////////////////////////////////////////////////////////////////////////
-size_t CRawSocket::receive( unsigned char *buf, size_t len,
-		bool blocking, int timeout ) const
-{
-	if( m_fd < 0) {
-		std::cerr << "UDP socket not open" << std::endl;
-		return 0;
-	}
+size_t CRawSocket::receive(unsigned char *buf, size_t len,
+                           bool blocking, int timeout) const {
+    if (m_fd < 0) {
+        std::cerr << "UDP socket not open" << std::endl;
+        return 0;
+    }
 
-	fd_set set;
-	FD_ZERO( &set );
-	FD_SET( m_fd, &set );
+    fd_set set;
+    FD_ZERO(&set);
+    FD_SET(m_fd, &set);
 
-	timeval to;
-	to.tv_usec = timeout;
-	to.tv_sec = 0;
+    timeval to;
+    to.tv_usec = timeout;
+    to.tv_sec = 0;
 
-	int sel = select( FD_SETSIZE, &set, 0, 0,
-			blocking ? 0 : &to );
+    int sel = select(FD_SETSIZE, &set, 0, 0,
+                     blocking ? 0 : &to);
 
-	if( sel < 0 ) {
-		std::cerr << "select() failed" << std::endl;
-		return 0;
-	}
+    if (sel < 0) {
+        std::cerr << "select() failed" << std::endl;
+        return 0;
+    }
 
-	if( sel > 0 ) {
-		sockaddr_ll sa;
-		socklen_t salen = sizeof( sockaddr_ll );
-		memset( &sa, 0, salen );
+    if (sel > 0) {
+        sockaddr_ll sa;
+        socklen_t salen = sizeof(sockaddr_ll);
+        memset(&sa, 0, salen);
 
-		int rbytes = recv( m_fd, buf, len, 0 );
+        int rbytes = recv(m_fd, buf, len, 0);
 
-		if( rbytes < 0 ) {
-			std::cerr << "recv() failed" << std::endl;
-			return 0;
-		}
+        if (rbytes < 0) {
+            std::cerr << "recv() failed" << std::endl;
+            return 0;
+        }
 
-		iphdr *iph = (iphdr *)(buf + sizeof( ether_header ));
+        iphdr *iph = (iphdr *) (buf + sizeof(ether_header));
 
-		if( m_sub_proto != 0 && iph->protocol != m_sub_proto )
-			return 0;
+        if (m_sub_proto != 0 && iph->protocol != m_sub_proto)
+            return 0;
 
-		udphdr *udph;
-		tcphdr *tcph;
+        udphdr *udph;
+        tcphdr *tcph;
 
-		switch( m_sub_proto ) {
-		case IPPROTO_UDP:
-			udph = (udphdr *)(buf + sizeof( iphdr ) + sizeof( ether_header ));
+        switch (m_sub_proto) {
+            case IPPROTO_UDP:
+                udph = (udphdr *) (buf + sizeof(iphdr) + sizeof(ether_header));
 #ifdef __FAVOR_BSD
-			if( udph->uh_dport != htons( m_port ) )
+                if( udph->uh_dport != htons( m_port ) )
 #else
-			if( udph->dest != htons( m_port ) )
+                if (udph->dest != htons(m_port))
 #endif
-				return 0;
-			break;
-		case IPPROTO_TCP:
-			tcph = (tcphdr *)(buf + sizeof( iphdr ) + sizeof( ether_header ));
+                    return 0;
+                break;
+            case IPPROTO_TCP:
+                tcph = (tcphdr *) (buf + sizeof(iphdr) + sizeof(ether_header));
 #ifdef __FAVOR_BSD
-			if( tcph->th_dport != htons( m_port ) )
+                if( tcph->th_dport != htons( m_port ) )
 #else
-			if( tcph->dest != htons( m_port ) )
+                if (tcph->dest != htons(m_port))
 #endif
-				return 0;
-			break;
-		default:
-			break;
-		}
+                    return 0;
+                break;
+            default:
+                break;
+        }
 
-		return (size_t)rbytes;
-	}
+        return (size_t) rbytes;
+    }
 
-	return 0;
+    return 0;
 }

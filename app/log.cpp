@@ -34,37 +34,34 @@
 //////////////////////////////////////////////////////////////////////////
 /// Send a debug message to the syslog
 //////////////////////////////////////////////////////////////////////////
-void logDbg( const char *fmt, ... )
-{
+void logDbg(const char *fmt, ...) {
 #ifdef _DEBUG
-  va_list va;
+    va_list va;
 
-  va_start( va, fmt );
-  vsyslog( LOG_MAKEPRI( LOG_DAEMON, LOG_DEBUG ), fmt, va );
-  va_end( va );
+    va_start( va, fmt );
+    vsyslog( LOG_MAKEPRI( LOG_DAEMON, LOG_DEBUG ), fmt, va );
+    va_end( va );
 #endif
 }
 
 //////////////////////////////////////////////////////////////////////////
 /// Send an error message to the syslog
 //////////////////////////////////////////////////////////////////////////
-void logErr( const char *fmt, ... )
-{
-  va_list va;
+void logErr(const char *fmt, ...) {
+    va_list va;
 
-  va_start( va, fmt );
-  vsyslog( LOG_MAKEPRI( LOG_DAEMON, LOG_ERR ), fmt, va );
-  va_end( va );
+    va_start(va, fmt);
+    vsyslog(LOG_MAKEPRI(LOG_DAEMON, LOG_ERR), fmt, va);
+    va_end(va);
 }
 
 //////////////////////////////////////////////////////////////////////////
 /// Send an info message to the syslog
 //////////////////////////////////////////////////////////////////////////
-void logInf( const char *fmt, ... )
-{
-  va_list va;
+void logInf(const char *fmt, ...) {
+    va_list va;
 
-  va_start( va, fmt );
-  vsyslog( LOG_MAKEPRI( LOG_DAEMON, LOG_INFO ), fmt, va );
-  va_end( va );
+    va_start(va, fmt);
+    vsyslog(LOG_MAKEPRI(LOG_DAEMON, LOG_INFO), fmt, va);
+    va_end(va);
 }
