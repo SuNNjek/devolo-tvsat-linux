@@ -1,10 +1,18 @@
 .PHONY: all clean distclean install reinstall uninstall
+
+.PHONY: build_app clean_app install_app uninstall_app
+.PHONY: build_module clean_module install_module uninstall_module
+.PHONY: install_init uninstall_init
+
 .SILENT:
 
-all distclean: check
+all clean distclean: check
 	$(MAKE) -s -f Makefile.silent $@
 
-clean clean_module clean_app: check
+build_app clean_app:
+	$(MAKE) -s -f Makefile.silent $@
+
+build_module clean_module: check
 	$(MAKE) -s -f Makefile.silent $@
 
 install install_module install_app install_init: check
