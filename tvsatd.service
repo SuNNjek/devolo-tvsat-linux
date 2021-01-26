@@ -1,0 +1,10 @@
+[Unit]
+Description=tvsat control daemon
+After=syslog.target network.target
+
+[Service]
+ExecStart=/usr/bin/tvsatd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
