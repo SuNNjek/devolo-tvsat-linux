@@ -12,26 +12,26 @@ If you want to compile the driver with DKMS there's a few commands you need to e
 
 First off, you want to prepare the module for DKMS. After cloning the repository you need to create a link so DKMS can find the module.
 
-```
+```console
 # ln -s <path of the repo> /usr/src/tvsat-1.0.0 && dkms add -m tvsat -v 1.0.0 
 ```
 
 Then you need to build the module and install it:
 
-```
+```console
 # dkms build -m tvsat -v 1.0.0 && dkms install -m tvsat -v 1.0.0
 ```
 
 To load the module on startup you need to edit `/etc/modules`:
 
-```
+```console
 # echo 'tvsat' >> /etc/modules
 ```
 
 Finally you need to compile the daemon and register it as a service:
 
-```
-# make install_app install_init
+```console
+# make install_app && make install_init
 ```
 
 This is it, the driver is installed
@@ -40,7 +40,7 @@ I will try to streamline this process in the future so it's less complicated but
 ### Without DKMS
 If you wish to not have DKMS support, you can simply use Make to install the driver. Simply execute from the command line:
 
-```
+```console
 # make && make install
 ```
 
